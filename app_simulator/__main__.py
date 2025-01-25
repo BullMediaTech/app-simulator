@@ -77,6 +77,18 @@ def main():
         clean_storage()
 
     app = web.Application(middlewares=[middleware])
+
+    # BullMedia modifications made for support https
+    ssl_context = None
+    try:
+        import ssl
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain(certfile='certification.pem', keyfile='certification-key.pem')
+    except Exception as e:
+        print(f"Error al configurar el contexto SSL: {e}")
+        ssl_context = None
+    # End of Bull media modifications
+
     app["base_path"] = pathlib.Path(args.path)
 
     app.router.add_get("/.change_notification", routes.change_notification_sse)
@@ -93,7 +105,7 @@ def main():
     app.router.add_post(r"/.preview/{file_name:.+}", routes.preview_app)
     app.router.add_get(r"/{file_name:.*}", routes.list_form_file)
 
-    web.run_app(app, port=args.port, host=args.host)
+    web.run_app(app, port=args.port, host=args.host, ssl_context=ssl_context)
 
 
 if __name__ == "__main__":
